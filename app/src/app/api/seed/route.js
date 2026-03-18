@@ -3,7 +3,15 @@ import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/db';
 import User from '@/lib/models/User';
 
+export async function GET() {
+  return seed();
+}
+
 export async function POST() {
+  return seed();
+}
+
+async function seed() {
   try {
     await dbConnect();
 
@@ -38,6 +46,6 @@ export async function POST() {
     }, { status: 201 });
   } catch (error) {
     console.error('Seed error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
