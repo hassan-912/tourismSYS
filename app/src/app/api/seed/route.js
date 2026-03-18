@@ -23,8 +23,8 @@ async function seed() {
 
     const users = [
       { name: 'Hassan', username: 'hassan', password: 'admin123', role: 'admin' },
-      { name: 'Salama Ayman', username: 'salama.ayman', password: 'emp123', role: 'employee' },
-      { name: 'Salama Osama', username: 'salama.osama', password: 'emp123', role: 'employee' },
+      { name: 'Salma Ayman', username: 'salama.ayman', password: 'emp123', role: 'employee' },
+      { name: 'Salma Osama', username: 'salama.osama', password: 'emp123', role: 'employee' },
       { name: 'Salma Yousry', username: 'salma.yousry', password: 'emp123', role: 'employee' },
       { name: 'Nasser', username: 'nasser', password: 'emp123', role: 'employee' },
       { name: 'Moataz', username: 'moataz', password: 'emp123', role: 'employee' },
