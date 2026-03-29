@@ -288,6 +288,12 @@ export default function CasesPage() {
                     <span className="case-field-value">{c.nextStep}</span>
                   </div>
                 )}
+                {c.followUpName && (
+                  <div className="case-field">
+                    <span className="case-field-label">🔄 Follow Up</span>
+                    <span className="case-field-value">{c.followUpName}</span>
+                  </div>
+                )}
                 <div className="case-field">
                   <span className="case-field-label">👤 Created By</span>
                   <span className="case-field-value">{c.createdBy?.name || 'Unknown'}</span>

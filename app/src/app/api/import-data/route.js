@@ -36,11 +36,62 @@ function parseDate(dateStr) {
   return null;
 }
 
+// Map file holder names from the Excel to a normalized user name
+function normalizeFileHolder(holder) {
+  if (!holder) return 'hassan';
+  const h = holder.trim().toLowerCase();
+  
+  // Moataz variants
+  if (h.includes('mo') && (h.includes('taz') || h.includes('عt'))) return 'moataz';
+  if (h === 'mo3taz') return 'moataz';
+  
+  // Salma variants
+  if (h === 'salma ayman') return 'salma ayman';
+  if (h === 'salma yousry' || h === 'salma youssry' || h === 'salma yossry') return 'salma yousry';
+  if (h.includes('salma') && h.includes('moaw') || h.includes('salma') && h.includes('moad')) return 'salma moawad';
+  if (h === 'salma ibrahim' || h === 'salma ibrahim') return 'salma ibrahim';
+  if (h === 'salma' || h === 'salma' || h.startsWith('salma')) return 'salma ayman'; // default salma
+  
+  // Direct matches
+  if (h === 'hassan') return 'hassan';
+  if (h === 'nasser') return 'nasser';
+  if (h === 'yara') return 'yara';
+  if (h === 'passant') return 'passant';
+  if (h === 'nermin' || h === 'nermen') return 'nermin';
+  if (h === 'huda') return 'huda';
+  if (h === 'alaa') return 'alaa';
+  if (h === 'alaa karam') return 'alaa karam';
+  if (h === 'basant') return 'basant';
+  if (h === 'abir') return 'abir';
+  if (h === 'menna') return 'menna';
+  if (h === 'rahma') return 'rahma';
+  if (h === 'noha') return 'noha';
+  if (h === 'zayed') return 'zayed';
+  if (h === 'safaa') return 'safaa';
+  if (h === 'nayera') return 'nayera';
+  if (h === 'ali') return 'ali';
+  if (h === 'ismail') return 'ismail';
+  if (h === 'mostafa') return 'mostafa';
+  if (h === 'aly') return 'aly';
+  if (h === 'mg+') return 'hassan';
+  
+  // Combined holders - use first name
+  if (h.includes('&') || h.includes('+')) {
+    const first = h.split(/[&+]/)[0].trim();
+    return normalizeFileHolder(first);
+  }
+  
+  return 'hassan'; // fallback
+}
+
+// Cutoff date: only import cases from 25/3/2026 onwards
+const CUTOFF_DATE = new Date(2026, 2, 25); // March 25, 2026
+
 async function importData() {
   try {
     await dbConnect();
 
-    // Check if data already imported
+    // Check if import already done
     const existingCount = await Case.countDocuments();
     if (existingCount > 0) {
       return NextResponse.json({ 
@@ -50,24 +101,49 @@ async function importData() {
       });
     }
 
-    // Find or create a system user to assign as createdBy
-    let systemUser = await User.findOne({ username: 'hassan' });
-    if (!systemUser) {
+    // Load all users into a map by name (lowercase)
+    const allUsers = await User.find({});
+    if (allUsers.length === 0) {
       return NextResponse.json({ 
-        error: 'No admin user found. Please seed users first by visiting /api/seed' 
+        error: 'No users found. Please seed users first by visiting /api/seed' 
       }, { status: 400 });
     }
+    
+    const userMap = {};
+    for (const u of allUsers) {
+      userMap[u.name.toLowerCase()] = u._id;
+    }
+    
+    // Fallback to admin
+    const adminUser = allUsers.find(u => u.role === 'admin');
 
     let imported = 0;
     let skipped = 0;
+    let filtered = 0;
     const errors = [];
 
     for (const row of seedData) {
       try {
         const appointmentDate = parseDate(row.appointmentDate);
         
+        // Skip cases before 25/3/2026
+        if (appointmentDate && appointmentDate < CUTOFF_DATE) {
+          filtered++;
+          continue;
+        }
+        
+        // If no date, skip too (old data without dates)
+        if (!appointmentDate) {
+          filtered++;
+          continue;
+        }
+        
+        // Map file holder to user
+        const holderName = normalizeFileHolder(row.fileHolder);
+        const createdById = userMap[holderName] || adminUser._id;
+        
         const caseDoc = new Case({
-          appointmentDate: appointmentDate || undefined,
+          appointmentDate: appointmentDate,
           odooId: row.odooId || `AUTO-${imported + 1}`,
           clientName: row.clientName,
           phone: '',
@@ -77,7 +153,8 @@ async function importData() {
           visaType: row.visaType || '',
           notes: row.note || '',
           nextStep: '',
-          createdBy: systemUser._id,
+          followUpName: row.followUp || '',
+          createdBy: createdById,
           progress: 0,
         });
 
@@ -90,8 +167,9 @@ async function importData() {
     }
 
     return NextResponse.json({
-      message: `Import complete: ${imported} imported, ${skipped} skipped`,
+      message: `Import complete: ${imported} imported, ${filtered} filtered (before 25/3/2026), ${skipped} skipped`,
       imported,
+      filtered,
       skipped,
       errors: errors.slice(0, 10),
     }, { status: 201 });

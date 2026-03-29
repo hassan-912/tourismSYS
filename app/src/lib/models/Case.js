@@ -15,6 +15,7 @@ const CaseSchema = new mongoose.Schema({
   },
   notes: { type: String, default: '' },
   nextStep: { type: String, default: '' },
+  followUpName: { type: String, default: '' },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

@@ -84,6 +84,7 @@ const DEFAULT_FORM = {
   visaType: '',
   notes: '',
   nextStep: '',
+  followUpName: '',
   whatsappGroup: false,
   hotelReservation: false,
   flightReservation: false,
@@ -361,15 +362,27 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
           />
         </div>
 
-        <div className="form-group">
-          <label className="form-label">Next Step</label>
-          <input
-            type="text"
-            className="form-input"
-            value={form.nextStep}
-            onChange={e => handleChange('nextStep', e.target.value)}
-            placeholder="What's the next step?"
-          />
+        <div className="form-row" style={{ marginBottom: 20 }}>
+          <div className="form-group">
+            <label className="form-label">Follow Up Name</label>
+            <input
+              type="text"
+              className="form-input"
+              value={form.followUpName}
+              onChange={e => handleChange('followUpName', e.target.value)}
+              placeholder="Who is following up?"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Next Step</label>
+            <input
+              type="text"
+              className="form-input"
+              value={form.nextStep}
+              onChange={e => handleChange('nextStep', e.target.value)}
+              placeholder="What's the next step?"
+            />
+          </div>
         </div>
       </div>
 
