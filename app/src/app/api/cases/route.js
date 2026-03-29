@@ -27,6 +27,7 @@ export async function GET(request) {
         { clientName: { $regex: search, $options: 'i' } },
         { phone: { $regex: search, $options: 'i' } },
         { odooId: { $regex: search, $options: 'i' } },
+        { visaType: { $regex: search, $options: 'i' } },
       ];
     }
 

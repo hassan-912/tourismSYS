@@ -67,15 +67,16 @@ export default function CasesPage() {
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
 
-    const tableColumn = ["Client Name", "Odoo ID", "Phone", "Country", "Appointment Date", "Progress", "Created By", "Next Step"];
+    const tableColumn = ["Client Name", "Odoo ID", "Phone", "Country", "Visa Type", "Appointment Date", "Progress", "Created By", "Next Step"];
     const tableRows = [];
 
     exportCases.forEach(c => {
       const caseData = [
         c.clientName,
         c.odooId,
-        c.phone,
+        c.phone || '-',
         c.country,
+        c.visaType || '-',
         formatDate(c.appointmentDate),
         `${c.progress}%`,
         c.createdBy?.name || '-',
@@ -156,9 +157,12 @@ export default function CasesPage() {
 
   const formatDate = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric'
-    });
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
   };
 
   if (loading) {
@@ -260,14 +264,24 @@ export default function CasesPage() {
                   <span className="case-field-label">🔢 Odoo ID</span>
                   <span className="case-field-value">{c.odooId}</span>
                 </div>
-                <div className="case-field">
-                  <span className="case-field-label">📞 Phone</span>
-                  <span className="case-field-value">{c.phone}</span>
-                </div>
-                <div className="case-field">
-                  <span className="case-field-label">📧 Email</span>
-                  <span className="case-field-value">{c.email}</span>
-                </div>
+                {c.visaType && (
+                  <div className="case-field">
+                    <span className="case-field-label">🏷️ Visa Type</span>
+                    <span className="case-field-value">{c.visaType}</span>
+                  </div>
+                )}
+                {c.phone && (
+                  <div className="case-field">
+                    <span className="case-field-label">📞 Phone</span>
+                    <span className="case-field-value">{c.phone}</span>
+                  </div>
+                )}
+                {c.email && (
+                  <div className="case-field">
+                    <span className="case-field-label">📧 Email</span>
+                    <span className="case-field-value">{c.email}</span>
+                  </div>
+                )}
                 {c.nextStep && (
                   <div className="case-field">
                     <span className="case-field-label">➡️ Next Step</span>

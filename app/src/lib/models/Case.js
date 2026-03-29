@@ -1,11 +1,12 @@
 import mongoose from 'mongoose';
 
 const CaseSchema = new mongoose.Schema({
-  appointmentDate: { type: Date, required: true },
+  appointmentDate: { type: Date },
   odooId: { type: String, required: true, trim: true },
   clientName: { type: String, required: true, trim: true },
-  phone: { type: String, required: true, trim: true },
-  email: { type: String, required: true, trim: true, lowercase: true },
+  phone: { type: String, default: '', trim: true },
+  email: { type: String, default: '', trim: true },
+  visaType: { type: String, default: '', trim: true },
   password: { type: String, default: '' },
   country: {
     type: String,

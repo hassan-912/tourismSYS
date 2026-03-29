@@ -35,6 +35,38 @@ const COUNTRY_FIELDS = {
   },
 };
 
+// Visa type options organized by country
+const VISA_TYPE_OPTIONS = {
+  Schengen: [
+    'Spain Tour.', 'Spain T', 'Spain', 'Spain Abu Dhabi', 'Spain Dubai', 'Spain Riyadh', 'Spain Alex',
+    'France Tour.', 'France T', 'France B', 'France', 'France Alex', 'France Hurghada', 'France Jeddah', 'France Door to Door',
+    'Germany Tour.', 'Germany Tourism', 'Germany T', 'Germany B', 'Germany B.', 'Germany Bus.', 'Germany B Alex', 'Germany B UAE', 'Germany T Alex', 'Germany T KSA',
+    'Italy B',
+    'Netherlands T', 'Netherlands B', 'Netherlands Tour.', 'Netherland T', 'Netherland B', 'The Netherlands',
+    'Belgium T', 'Belgium Tour.',
+    'Austria T Alex',
+    'Greece', 'Greece T', 'Greece Alex',
+    'Poland', 'Poland B',
+    'Romania Tour.',
+    'Croatia T', 'Croatia Bus.',
+    'Portugal T',
+    'Hungary T',
+    'Norway',
+    'Malta',
+    'Bulgaria',
+    'Finland Tour.',
+  ],
+  USA: [
+    'USA Tourist', 'USA Business', 'USA Student',
+  ],
+  UK: [
+    'UK Tourist', 'UK Business', 'UK Student',
+  ],
+  Canada: [
+    'Canada Tourist', 'Canada Business', 'Canada Student',
+  ],
+};
+
 const COMMON_CHECKBOXES = [
   { key: 'whatsappGroup', label: 'WhatsApp Group' },
   { key: 'hotelReservation', label: 'Hotel Reservation' },
@@ -49,6 +81,7 @@ const DEFAULT_FORM = {
   email: '',
   password: '',
   country: 'Schengen',
+  visaType: '',
   notes: '',
   nextStep: '',
   whatsappGroup: false,
@@ -69,25 +102,68 @@ const DEFAULT_FORM = {
   translationCanada: false,
 };
 
+// Helper: convert ISO date string to dd/mm/yy for display in text input
+function toDisplayDate(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return isoStr;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}/${mm}/${yy}`;
+}
+
+// Helper: convert dd/mm/yy text to ISO date string for storage
+function fromDisplayDate(text) {
+  if (!text) return '';
+  const match = text.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (!match) return text;
+  const day = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  let year = parseInt(match[3], 10);
+  if (year < 100) year += 2000;
+  const d = new Date(year, month - 1, day);
+  if (isNaN(d.getTime())) return text;
+  return d.toISOString().split('T')[0];
+}
+
 export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
   const [form, setForm] = useState(DEFAULT_FORM);
+  const [dateText, setDateText] = useState('');
 
   useEffect(() => {
     if (caseData) {
-      setForm({
+      const newForm = {
         ...DEFAULT_FORM,
         ...caseData,
         appointmentDate: caseData.appointmentDate
           ? new Date(caseData.appointmentDate).toISOString().split('T')[0]
           : '',
-      });
+      };
+      setForm(newForm);
+      setDateText(toDisplayDate(newForm.appointmentDate));
     } else {
       setForm(DEFAULT_FORM);
+      setDateText('');
     }
   }, [caseData]);
 
   const handleChange = (key, value) => {
     setForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleCountryChange = (value) => {
+    setForm(prev => ({ ...prev, country: value, visaType: '' }));
+  };
+
+  const handleDateTextChange = (text) => {
+    setDateText(text);
+    const isoDate = fromDisplayDate(text);
+    if (isoDate !== text) {
+      handleChange('appointmentDate', isoDate);
+    } else {
+      handleChange('appointmentDate', '');
+    }
   };
 
   const handleCheckbox = (key) => {
@@ -100,6 +176,7 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
   };
 
   const countryConfig = COUNTRY_FIELDS[form.country] || { checkboxes: [], toggle: null };
+  const visaOptions = VISA_TYPE_OPTIONS[form.country] || [];
 
   return (
     <form onSubmit={handleSubmit}>
@@ -107,13 +184,13 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
         {/* Basic Information */}
         <div className="form-row" style={{ marginBottom: 20 }}>
           <div className="form-group">
-            <label className="form-label">Appointment Date *</label>
+            <label className="form-label">Appointment Date</label>
             <input
-              type="date"
+              type="text"
               className="form-input"
-              value={form.appointmentDate}
-              onChange={e => handleChange('appointmentDate', e.target.value)}
-              required
+              value={dateText}
+              onChange={e => handleDateTextChange(e.target.value)}
+              placeholder="dd/mm/yy"
             />
           </div>
           <div className="form-group">
@@ -142,28 +219,26 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Phone Number *</label>
+            <label className="form-label">Phone Number</label>
             <input
               type="tel"
               className="form-input"
               value={form.phone}
               onChange={e => handleChange('phone', e.target.value)}
               placeholder="Enter phone number"
-              required
             />
           </div>
         </div>
 
         <div className="form-row" style={{ marginBottom: 20 }}>
           <div className="form-group">
-            <label className="form-label">Email *</label>
+            <label className="form-label">Email</label>
             <input
               type="email"
               className="form-input"
               value={form.email}
               onChange={e => handleChange('email', e.target.value)}
               placeholder="Enter email"
-              required
             />
           </div>
           <div className="form-group">
@@ -178,19 +253,34 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
           </div>
         </div>
 
-        <div className="form-group" style={{ marginBottom: 20 }}>
-          <label className="form-label">Country *</label>
-          <select
-            className="form-select"
-            value={form.country}
-            onChange={e => handleChange('country', e.target.value)}
-            required
-          >
-            <option value="Schengen">Schengen</option>
-            <option value="USA">USA</option>
-            <option value="UK">UK</option>
-            <option value="Canada">Canada</option>
-          </select>
+        <div className="form-row" style={{ marginBottom: 20 }}>
+          <div className="form-group">
+            <label className="form-label">Country *</label>
+            <select
+              className="form-select"
+              value={form.country}
+              onChange={e => handleCountryChange(e.target.value)}
+              required
+            >
+              <option value="Schengen">Schengen</option>
+              <option value="USA">USA</option>
+              <option value="UK">UK</option>
+              <option value="Canada">Canada</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">State / Visa Type</label>
+            <select
+              className="form-select"
+              value={form.visaType}
+              onChange={e => handleChange('visaType', e.target.value)}
+            >
+              <option value="">-- Select --</option>
+              {visaOptions.map(vt => (
+                <option key={vt} value={vt}>{vt}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Common Checkboxes */}
