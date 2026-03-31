@@ -2,12 +2,11 @@
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import LoginPage from '@/components/LoginPage';
-import DashboardPage from '@/components/DashboardPage';
+import CasesPage from '@/components/CasesPage';
 import Navbar from '@/components/Navbar';
-import Sidebar from '@/components/Sidebar';
 import Chat from '@/components/Chat';
 
-function DashboardContent() {
+function AppContent() {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -18,14 +17,16 @@ function DashboardContent() {
     );
   }
 
-  if (!user) return <LoginPage />;
+  if (!user) {
+    return <LoginPage />;
+  }
 
   return (
     <>
       <Navbar />
       <div className="app-layout">
         <main className="main-content">
-          <DashboardPage />
+          <CasesPage department="Reviewer" />
         </main>
       </div>
       <Chat />
@@ -33,10 +34,10 @@ function DashboardContent() {
   );
 }
 
-export default function Dashboard() {
+export default function ReviewerPage() {
   return (
     <AuthProvider>
-      <DashboardContent />
+      <AppContent />
     </AuthProvider>
   );
 }

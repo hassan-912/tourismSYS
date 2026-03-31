@@ -104,6 +104,7 @@ const DEFAULT_FORM = {
   department: 'Tourism',
   reviewName: '',
   reviewedItems: [],
+  mgTab: 'New Cases',
 };
 
 // Helper: convert ISO date string to dd/mm/yy for display in text input
@@ -144,6 +145,7 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading, users 
           : '',
         createdBy: caseData.createdBy?._id || caseData.createdBy || '',
         reviewedItems: caseData.reviewedItems || [],
+        mgTab: caseData.mgTab || 'New Cases',
       };
       setForm(newForm);
       setDateText(toDisplayDate(newForm.appointmentDate));
@@ -233,6 +235,22 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading, users 
               required
             />
           </div>
+          {department === 'MG+' && (
+            <div className="form-group">
+              <label className="form-label">MG+ Tab State</label>
+              <select
+                className="form-select"
+                value={form.mgTab}
+                onChange={e => handleChange('mgTab', e.target.value)}
+              >
+                <option value="New Cases">New Cases</option>
+                <option value="After Rejection">After Rejection</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="form-row" style={{ marginBottom: 20 }}>
           <div className="form-group">
             <label className="form-label">Phone Number</label>
             <input
@@ -399,7 +417,7 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading, users 
           </div>
         </div>
 
-        {['admin', 'sub-admin'].includes(currentUser?.role) && (
+        {['admin', 'moderator', 'sub-admin'].includes(currentUser?.role?.toLowerCase()) && (
           <div className="form-group" style={{ marginBottom: 20 }}>
             <label className="form-label">Created By (File Holder) *</label>
             <select

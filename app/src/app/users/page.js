@@ -14,8 +14,11 @@ function UsersContent() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user && user.role !== 'admin') {
-      router.push('/');
+    if (!loading && user) {
+      const normalizedRole = user.role.toLowerCase();
+      if (!['admin', 'moderator', 'sub-admin'].includes(normalizedRole)) {
+        router.push('/');
+      }
     }
   }, [user, loading, router]);
 
@@ -28,7 +31,8 @@ function UsersContent() {
   }
 
   if (!user) return <LoginPage />;
-  if (user.role !== 'admin') return null;
+  const normalizedRole = user.role.toLowerCase();
+  if (!['admin', 'moderator', 'sub-admin'].includes(normalizedRole)) return null;
 
   return (
     <>

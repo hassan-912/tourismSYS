@@ -24,6 +24,7 @@ const CaseSchema = new mongoose.Schema({
   reviewName: { type: String, default: '' },
   reviewedItems: { type: [String], default: [] },
   progress: { type: Number, default: 0 },
+  mgTab: { type: String, enum: ['New Cases', 'After Rejection'], default: 'New Cases' },
 
   // Common fields (ALL countries)
   whatsappGroup: { type: Boolean, default: false },

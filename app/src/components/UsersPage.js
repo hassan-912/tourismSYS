@@ -137,6 +137,10 @@ export default function UsersPage() {
 
   if (loading) return <div className="loading-spinner"><div className="spinner" /></div>;
 
+  const normalizedRole = user?.role?.toLowerCase() || '';
+  const canManageRoles = ['admin'].includes(normalizedRole);
+  const canCreateUsers = ['admin', 'moderator', 'sub-admin'].includes(normalizedRole);
+
   return (
     <div>
       <div className="page-header">
@@ -168,7 +172,7 @@ export default function UsersPage() {
             <h2>Team Members</h2>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Use Edit Role to modify user permissions</span>
-              {user?.role === 'admin' && (
+              {canCreateUsers && (
                 <button className="btn btn-primary btn-sm" onClick={() => setShowCreateModal(true)}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="5" x2="12" y2="19" />
@@ -208,23 +212,25 @@ export default function UsersPage() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '4px' }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => {
-                            setEditUser(u);
-                            setForm({ role: u.role || 'employee' });
-                            setShowModal(true);
-                            setError('');
-                          }}
-                        >
-                          Edit Role
-                        </button>
-                        {user?.role === 'admin' && (
+                        {canManageRoles && (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => {
+                              setEditUser(u);
+                              setForm({ role: u.role || 'employee' });
+                              setShowModal(true);
+                              setError('');
+                            }}
+                          >
+                            Edit Role
+                          </button>
+                        )}
+                        {canManageRoles && (
                           <button
                             className="btn btn-danger btn-sm"
                             onClick={() => handleDeleteUser(u._id)}
-                            disabled={u.role === 'admin'}
-                            style={u.role === 'admin' ? { opacity: 0.3 } : {}}
+                            disabled={u.role === 'admin' || u.role === 'Admin'}
+                            style={(u.role === 'admin' || u.role === 'Admin') ? { opacity: 0.3 } : {}}
                           >
                             Delete
                           </button>
@@ -334,15 +340,18 @@ export default function UsersPage() {
 
                 <div className="form-group">
                   <label className="form-label">New Custom Role *</label>
-                  <input
-                    type="text"
-                    className="form-input"
+                  <select
+                    className="form-select"
                     value={form.role}
                     onChange={e => setForm({ role: e.target.value })}
-                    placeholder="e.g. employee, reviewer, manager"
                     required
-                  />
-                  <small style={{ color: 'var(--text-muted)' }}>You can type any role here except "admin".</small>
+                  >
+                    <option value="">-- Select Role --</option>
+                    {['Tourism', 'MG+', 'Review', 'admin', 'moderator', 'jobseeker', 'study', 'immigration'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <small style={{ color: 'var(--text-muted)' }}>You can select any role here except "admin" (unless you are the main admin).</small>
                 </div>
               </div>
               <div className="modal-footer">
@@ -399,16 +408,21 @@ export default function UsersPage() {
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Role</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={createForm.role}
-                    onChange={e => setCreateForm({ ...createForm, role: e.target.value })}
-                    placeholder="e.g. employee, sub-admin"
-                  />
-                </div>
+                {canManageRoles && (
+                  <div className="form-group">
+                    <label className="form-label">Role</label>
+                    <select
+                      className="form-select"
+                      value={createForm.role}
+                      onChange={e => setCreateForm({ ...createForm, role: e.target.value })}
+                    >
+                      <option value="">-- Select Role (Defaults to Tourism) --</option>
+                      {['Tourism', 'MG+', 'Review', 'admin', 'moderator', 'jobseeker', 'study', 'immigration'].map(r => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>

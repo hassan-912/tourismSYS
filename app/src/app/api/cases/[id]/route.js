@@ -42,8 +42,10 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Case not found' }, { status: 404 });
     }
 
-    // Check permissions: admin/sub-admin can edit all, employees can only edit their own
-    if (!['admin', 'sub-admin'].includes(user.role) && caseDoc.createdBy?.toString() !== user.id) {
+    // Check permissions: admin/moderator/reviewer can edit all, employees can only edit their own
+    const normalizedRole = user.role.toLowerCase();
+    const canEditAll = ['admin', 'moderator', 'sub-admin', 'review team', 'reviewer', 'review'].includes(normalizedRole);
+    if (!canEditAll && caseDoc.createdBy?.toString() !== user.id) {
       return NextResponse.json({ error: 'You can only edit cases you created' }, { status: 403 });
     }
 
@@ -52,7 +54,7 @@ export async function PUT(request, { params }) {
     // Update case fields
     Object.keys(body).forEach((key) => {
       if (key !== '_id') {
-        if (key === 'createdBy' && !['admin', 'sub-admin'].includes(user.role)) {
+        if (key === 'createdBy' && !['admin', 'moderator', 'sub-admin'].includes(normalizedRole)) {
           // Skip letting non-admins alter createdBy
           return;
         }
@@ -79,9 +81,10 @@ export async function DELETE(request, { params }) {
     const authError = requireAuth(user);
     if (authError) return authError;
 
-    // Only admin/sub-admin can delete
-    if (!['admin', 'sub-admin'].includes(user.role)) {
-      return NextResponse.json({ error: 'Only administrators can delete cases' }, { status: 403 });
+    const normalizedRole = user.role.toLowerCase();
+    // Only admin/moderator/sub-admin can delete
+    if (!['admin', 'moderator', 'sub-admin'].includes(normalizedRole)) {
+      return NextResponse.json({ error: 'Only administrators and moderators can delete cases' }, { status: 403 });
     }
 
     await dbConnect();

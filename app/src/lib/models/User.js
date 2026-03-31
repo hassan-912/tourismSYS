@@ -19,7 +19,11 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    default: 'employee',
+    default: 'Tourism',
+    enum: [
+      'Employee', 'Review Team', 'Moderator', 'Admin', 'admin', 'sub-admin', 'employee',
+      'Tourism', 'MG+', 'Review', 'moderator', 'jobseeker', 'study', 'immigration'
+    ], // Keeping old ones for backward compatibility
   },
 }, {
   timestamps: true,

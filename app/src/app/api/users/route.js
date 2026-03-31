@@ -27,15 +27,18 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const user = await getAuthUser(request);
-    const authError = requireAdmin(user);
+    const authError = requireAuth(user);
     if (authError) return authError;
 
-    if (user.role !== 'admin') {
-      return NextResponse.json({ error: 'System restricted: Only the main admin can create new users.' }, { status: 403 });
+    const normalizedRole = user.role.toLowerCase();
+    const canCreateUser = ['admin', 'moderator', 'sub-admin'].includes(normalizedRole);
+
+    if (!canCreateUser) {
+      return NextResponse.json({ error: 'System restricted: Only admins and moderators can create new users.' }, { status: 403 });
     }
 
     await dbConnect();
-    const { name, username, password, role } = await request.json();
+    const { name, username, password, role, departments } = await request.json();
 
     if (!name || !username || !password) {
       return NextResponse.json({ error: 'Name, username, and password are required' }, { status: 400 });
@@ -47,11 +50,18 @@ export async function POST(request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Role restriction: Moderator cannot ASSIGN roles
+    let assignedRole = role || 'Tourism';
+    if (!['admin'].includes(normalizedRole)) {
+      assignedRole = 'Tourism';
+    }
+
     const newUser = await User.create({
       name,
       username: username.toLowerCase(),
       password: hashedPassword,
-      role: role || 'employee',
+      role: assignedRole,
     });
 
     return NextResponse.json({

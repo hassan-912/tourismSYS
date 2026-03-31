@@ -7,7 +7,7 @@ import ProgressBar from '@/components/ProgressBar';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-export default function CasesPage() {
+export default function CasesPage({ department = 'Tourism' }) {
   const { user, authFetch } = useAuth();
   const [cases, setCases] = useState([]);
   const [users, setUsers] = useState([]);
@@ -43,7 +43,7 @@ export default function CasesPage() {
 
   const loadCases = async () => {
     try {
-      let url = '/api/cases?department=Tourism&';
+      let url = `/api/cases?department=${encodeURIComponent(department)}&`;
       if (filter !== 'all') url += `country=${filter}&`;
       if (search) url += `search=${encodeURIComponent(search)}&`;
       if (startDate) url += `startDate=${startDate}&`;
@@ -155,7 +155,8 @@ export default function CasesPage() {
   };
 
   const canEdit = (c) => {
-    if (['admin', 'sub-admin'].includes(user.role)) return true;
+    const normalizedRole = user?.role?.toLowerCase() || '';
+    if (['admin', 'moderator', 'sub-admin', 'reviewer', 'review team', 'review'].includes(normalizedRole)) return true;
     return c.createdBy?._id === user.id || c.createdBy === user.id;
   };
 
@@ -177,7 +178,7 @@ export default function CasesPage() {
     <div>
       <div className="page-header">
         <div>
-          <h1>📋 Tourism</h1>
+          <h1>📋 {department}</h1>
           <div className="page-header-sub">{cases.length} total record{cases.length !== 1 ? 's' : ''}</div>
         </div>
         <div className="page-actions">
@@ -407,7 +408,7 @@ export default function CasesPage() {
               loading={saving}
               users={users}
               currentUser={user}
-              department="Tourism"
+              department={department}
             />
           </div>
         </div>

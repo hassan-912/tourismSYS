@@ -42,7 +42,6 @@ function AppContent() {
         <main className="main-content">
           <CasesPage />
         </main>
-        <Sidebar />
       </div>
       <Chat />
     </>

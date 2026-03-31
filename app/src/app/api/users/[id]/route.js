@@ -15,6 +15,9 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'System restricted: Only the main admin can delete users' }, { status: 403 });
     }
 
+    await dbConnect();
+    const { id } = await params;
+
     // Prevent admin from deleting themselves
     if (id === user.id) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });

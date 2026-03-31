@@ -20,6 +20,7 @@ export default function MGPlusPage() {
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [activeTab, setActiveTab] = useState('New Cases');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export default function MGPlusPage() {
 
   const loadCases = async () => {
     try {
-      let url = '/api/cases?department=MG+&';
+      let url = '/api/cases?department=' + encodeURIComponent('MG+') + '&';
       if (filter !== 'all') url += `country=${filter}&`;
       if (search) url += `search=${encodeURIComponent(search)}&`;
       if (startDate) url += `startDate=${startDate}&`;
@@ -155,7 +156,8 @@ export default function MGPlusPage() {
   };
 
   const canEdit = (c) => {
-    if (['admin', 'sub-admin'].includes(user.role)) return true;
+    const normalizedRole = user?.role?.toLowerCase() || '';
+    if (['admin', 'moderator', 'sub-admin', 'reviewer', 'review team', 'review'].includes(normalizedRole)) return true;
     return c.createdBy?._id === user.id || c.createdBy === user.id;
   };
 
@@ -173,15 +175,17 @@ export default function MGPlusPage() {
     return <div className="loading-spinner"><div className="spinner" /></div>;
   }
 
+  const displayedCases = cases.filter(c => (c.mgTab || 'New Cases') === activeTab);
+
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: 0, paddingBottom: 10 }}>
         <div>
-          <h1>📋 MG+ Tourism</h1>
-          <div className="page-header-sub">{cases.length} total record{cases.length !== 1 ? 's' : ''}</div>
+          <h1>📋 MG+</h1>
+          <div className="page-header-sub">{displayedCases.length} total record{displayedCases.length !== 1 ? 's' : ''}</div>
         </div>
         <div className="page-actions">
-          <button className="btn btn-secondary btn-sm" onClick={() => exportPdf(cases)}>
+          <button className="btn btn-secondary btn-sm" onClick={() => exportPdf(displayedCases)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                <polyline points="14 2 14 8 20 8" />
@@ -197,6 +201,23 @@ export default function MGPlusPage() {
             New Case
           </button>
         </div>
+      </div>
+
+      <div className="sub-tabs-container" style={{ display: 'flex', gap: '20px', padding: '0 24px 15px', borderBottom: '1px solid var(--border-color)', marginBottom: '20px' }}>
+        <button 
+          className={`tab-btn ${activeTab === 'New Cases' ? 'active' : ''}`}
+          onClick={() => setActiveTab('New Cases')}
+          style={{ background: 'none', border: 'none', padding: '8px 4px', fontSize: '1rem', fontWeight: 600, color: activeTab === 'New Cases' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'New Cases' ? '2px solid var(--primary)' : '2px solid transparent', cursor: 'pointer' }}
+        >
+          New Cases
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'After Rejection' ? 'active' : ''}`}
+          onClick={() => setActiveTab('After Rejection')}
+          style={{ background: 'none', border: 'none', padding: '8px 4px', fontSize: '1rem', fontWeight: 600, color: activeTab === 'After Rejection' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'After Rejection' ? '2px solid var(--primary)' : '2px solid transparent', cursor: 'pointer' }}
+        >
+          After Rejection
+        </button>
       </div>
 
       {/* Filters */}
@@ -260,7 +281,7 @@ export default function MGPlusPage() {
       </div>
 
       {/* Cases Grid */}
-      {cases.length === 0 ? (
+      {displayedCases.length === 0 ? (
         <div className="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -271,7 +292,7 @@ export default function MGPlusPage() {
         </div>
       ) : (
         <div className="cases-grid">
-          {cases.map(c => (
+          {displayedCases.map(c => (
             <div key={c._id} className="case-card">
               <div className="case-card-header">
                 <h3>{c.clientName}</h3>

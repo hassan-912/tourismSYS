@@ -21,7 +21,12 @@ export async function GET(request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    let filter = { department };
+    let filter = {};
+    if (department === 'Reviewer' || department === 'Review') {
+      filter.department = { $in: ['Tourism', 'MG+'] };
+    } else {
+      filter.department = department;
+    }
     if (country && country !== 'all') {
       filter.country = country;
     }
@@ -49,7 +54,7 @@ export async function GET(request) {
 
     const cases = await Case.find(filter)
       .populate('createdBy', 'name username')
-      .sort({ createdAt: -1 });
+      .sort({ appointmentDate: 1, createdAt: -1 });
 
     return NextResponse.json(cases);
   } catch (error) {
@@ -65,11 +70,19 @@ export async function POST(request) {
     const authError = requireAuth(user);
     if (authError) return authError;
 
+    // RBAC check: Review team cannot create cases
+    const normalizedRole = user.role.toLowerCase();
+    const isReviewTeam = normalizedRole === 'review team' || normalizedRole === 'reviewer' || normalizedRole === 'review';
+    if (isReviewTeam) {
+      return NextResponse.json({ error: 'Review Team cannot create cases' }, { status: 403 });
+    }
+
     await dbConnect();
     const body = await request.json();
 
     const caseData = { ...body };
-    if (['admin', 'sub-admin'].includes(user.role) && body.createdBy) {
+    const canAssignCreator = ['admin', 'moderator', 'sub-admin'].includes(normalizedRole);
+    if (canAssignCreator && body.createdBy) {
       caseData.createdBy = body.createdBy;
     } else {
       caseData.createdBy = user.id;

@@ -42,7 +42,6 @@ function AppContent() {
         <main className="main-content">
           <MGPlusPage />
         </main>
-        <Sidebar />
       </div>
       <Chat />
     </>
