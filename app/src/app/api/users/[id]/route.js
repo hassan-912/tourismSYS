@@ -11,8 +11,9 @@ export async function DELETE(request, { params }) {
     const authError = requireAdmin(user);
     if (authError) return authError;
 
-    await dbConnect();
-    const { id } = await params;
+    if (user.role !== 'admin') {
+      return NextResponse.json({ error: 'System restricted: Only the main admin can delete users' }, { status: 403 });
+    }
 
     // Prevent admin from deleting themselves
     if (id === user.id) {
@@ -45,7 +46,19 @@ export async function PUT(request, { params }) {
     const updateData = {};
     if (name) updateData.name = name;
     if (username) updateData.username = username.toLowerCase();
-    if (role) updateData.role = role;
+    
+    // Check if trying to change role to admin
+    if (role) {
+       const targetUser = await User.findById(id);
+       
+       // Only main admin can grant admin role
+       if (targetUser && targetUser.role !== 'admin' && role.toLowerCase() === 'admin') {
+          if (user.role !== 'admin') {
+             return NextResponse.json({ error: 'Only main admin can grant Admin permissions' }, { status: 403 });
+          }
+       }
+       updateData.role = role;
+    }
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }

@@ -30,6 +30,10 @@ export async function POST(request) {
     const authError = requireAdmin(user);
     if (authError) return authError;
 
+    if (user.role !== 'admin') {
+      return NextResponse.json({ error: 'System restricted: Only the main admin can create new users.' }, { status: 403 });
+    }
+
     await dbConnect();
     const { name, username, password, role } = await request.json();
 

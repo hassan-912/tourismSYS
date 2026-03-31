@@ -77,7 +77,7 @@ const dataStr = `7954	 Youssef Maher Elsayed Mohamed Eliwa 	Nasser	Hussein		01/0
 22039	Anwar Fathi Mohamed Ali	Salma Youssry			23/04/2027	France  T  DOOR TO DOOR	anwar.ali@mgmailz.com	AppointmentsMG123@		
 17586	Abdelaziz Ahmed Fathalla Badr	MG+			27/04/2026	"France Hurghadaa"	abdelazizbadr@mgmailz.com	AppointmentsMG123@		
 18813	Ahmed Elmoatasem Abdelhamied Ahmed Amin	Salma Ibrahim 			28/04/2026	"France Hurghadaa"	ahmed.amin02@mgmailz.com	AppointmentsMG123@		
-18813	Zeina Abdallah Ahmed Abdallah Ghamry zoga ahmed	Salma Ibrahim 			28/04/2026	"France Hurghadaa"	ahmed.amin02@mgmailz.com	AppointmentsMG123@		
+18813	Zeina Abdallah Ahmed Abdallah Ghamry \u0632\u0648\u062c\u0647 \u0627\u062d\u0645\u062f \u0627\u0644\u0645\u0639\u062a\u0635\u0645	Salma Ibrahim 			28/04/2026	"France Hurghadaa"	ahmed.amin02@mgmailz.com	AppointmentsMG123@		
 16814	Ahmed Gad Osman Elsayed Fatoush	MG+			28/04/2026	"France Hurghadaa"	AhmedFatoush@mgmailz.com	AppointmentsMG123@		
 17903	Reem AlaaEldin Elsayed Aly Ahmed	MG+			28/04/2026	"France Hurghadaa"	reem.ahmed9618@gmail.com	Reem@12345		
 6532	Sayed Mahmoud Emam Mahmoud	Salma Ayman			28/04/2026	"France Hurghadaa"	sayed.mahmoud@mgmailz.com	AppointmentsMG123@		
@@ -95,188 +95,102 @@ const dataStr = `7954	 Youssef Maher Elsayed Mohamed Eliwa 	Nasser	Hussein		01/0
 4553	Mahmoud Sayed Ahmed Attia        				02/06/2026 	Germany T Alex	MahmoudAttia@mgmailz.com	AppointmentsMG1231@		
 21169	Hashim Jumaa Jubartalla Ahmed 	Moعtaz			02/06/2026 	Germany  B	hashim.ahmed@mgmailz.com	AppointmentsMG123@		
 12507	Gamal Mohamed Othman Elsayed	Salma Youssry			06/06/2026 	France  T	gamalelsayed11@mgmailz.com	AppointmentsMG123@		
-20032	Mazen Hossam Hussein Sallam   971526354111				07/06/2026 	Germany T Alex	HOSSAMSALLAM@mgmailz.com	Ahmedossary1@		
-20252	Maha Helmi Abdou Kasira And Her Son				09/06/2026 	Germany T Alex	MahaKasira@mgmailz.com mohamed.farag@mgmailz.com	AppointmentsMG1@		
+20032	Mazen Hossam Hussein Sallam   971526354111 \u0648\u0627\u0644\u062f \u0627\u0644\u0639\u0645\u064a\u0644 HOSSAM SALLAM				07/06/2026 	Germany T Alex	HOSSAMSALLAM@mgmailz.com	Ahmedossary1@		
+20252	Maha Helmi Abdou Kasira And Her Son			\u0645\u064a\u0639\u0627\u062f \u0627\u0644\u0627\u0645 \u0627\u0644\u0633\u0627\u0639\u0647 : 11 \u0645\u064a\u0639\u0627\u062f \u0627\u0644\u0627\u0628\u0646 \u0627\u0644\u0633\u0627\u0639\u0647 : 10	09/06/2026 	Germany T Alex	MahaKasira@mgmailz.com mohamed.farag@mgmailz.com	AppointmentsMG1@		
 21992	Mina Yonan Mounir Fanawil				09/06/2026 	Germany B	mina.fanawil@mgmailz.com	AppointmentsMG123@		
 18279	Mohamed Ahmed Ali Abdelaal				14/06/2026 	Germany T Alex	mohamedabdelaal@mgmailz.com	AppointmentsMG1@		
 14044	Ibrahim Hamada Ibrahim Elsamanoudy				14/06/2026 	Germany T Alex	IbrahimElsamanoudy@mgmailz.com	AppointmentsMG1@		
 20483	Khaled Abdelrahman Mohamed Bakri				16/06/2026 	Germany T Alex	KhaledBakri@mgmailz.com	AppointmentsMG1@		
 18028	Ali Ibrahim Mohamed Mamdour				18/06/2026 	Germany T Alex	alimamdour@mgmailz.com	AppointmentsMG1@		
 19914	Osama Afify Elsayed Mohamed Abdalla				18/06/2026 	Germany T Alex	OsamaAbdalla123@mgmailz.com	AppointmentsMG1@		
-17199	OMAR ELMITWALLI And HIS MOTHER 				18/06/2026 	Germany T Alex	OmarHassan1@mgmailz.com	AppointmentsMG1@		
-17199	Samar Elmahdi Fouad Abdou Hassan 			 	21/06/2026 	Germany T Alex	SamarHassan@mgmailz.com	AppointmentsMG1@		
-8791	Hesham Abouelnasr Ibrahim Hegazi And His Son 				23/06/2026	Germany T Alex	heshamhegazi@mgmailz.com baherHegazi@mgmailz.com	AppointmentsMG1@		
+17199	OMAR ELMITWALLI And HIS MOTHER \u0645\u064a\u0639\u0627\u062f \u0627\u0644\u0627\u0628\u0646				18/06/2026 	Germany T Alex	OmarHassan1@mgmailz.com	AppointmentsMG1@		
+17199	Samar Elmahdi Fouad Abdou Hassan  \u0645\u064a\u0639\u0627\u062f \u0627\u0644\u0627\u0645			 	21/06/2026 	Germany T Alex	SamarHassan@mgmailz.com	AppointmentsMG1@		
+8791	Hesham Abouelnasr Ibrahim Hegazi And His Son                               \u062d\u062c\u0632 \u0645\u064a\u0639\u0627\u062f\u064a\u0646 \u0627\u0644\u0645\u0627\u0646\u064a\u0627 \u0633\u064a\u0627\u062d\u0647 \u0641\u0631\u0639 \u0627\u0644\u0627\u0633\u0643\u0646\u062f\u0631\u064a\u0647				23/06/2026 \u0627\u0644\u0627\u0628 25/06/2026 \u0627\u0644\u0627\u0628\u0646 	Germany T Alex	heshamhegazi@mgmailz.com baherHegazi@mgmailz.com	AppointmentsMG1@		
 19881	Abanoub Saad Tawfik Gad Elsayed				23/06/2026 	Germany T Alex	abanoubgadelsayed@mgmailz.com	AppointmentsMG1@		
 19584	Hany Magdy Metwaly Mansour				25/06/2026 	Germany T Alex	hanymansour1@mgmailz.com	AppointmentsMG1@		
-12144	Alaa Mohamed Mohamed Youssef Hassane				28/06/2026 		alaa.hassane@mgmailz.com	AppointmentsMG123@`
-
-
-
-
-
-
-  ;
-
-// Convert dd/mm/yy text to YYYY-MM-DD Date
-function parseDate(text) {
-  if (!text) return null;
-  const match = text.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-  if (!match) return null;
-  const day = match[1].padStart(2, '0');
-  const month = match[2].padStart(2, '0');
-  let year = parseInt(match[3], 10);
-  if (year < 100) year += 2000;
-  return new Date(`${year}-${month}-${day}T12:00:00.000Z`);
-}
-
-const ALLOWED_FILTERS = [
-  'hassan',
-  'salma yousry',
-  'salma youssry', // catching spelling variations
-  'salma osama',
-  'salma ayman',
-  'menna',
-  'nasser',
-  'moataz',
-  'moعtaz',       // catching spelling variations
-  'noha'
-];
+12144	Alaa Mohamed Mohamed Youssef Hassane				28/06/2026 		alaa.hassane@mgmailz.com	AppointmentsMG123@`;
 
 export async function GET(request) {
   try {
     await dbConnect();
-
-    // We strictly ONLY clear cases. We do NOT delete any Users!
-    await Case.deleteMany({});
-
-    // Ensure there is at least an admin account if none exists
-    let existingAdmin = await User.findOne({ role: 'admin' });
-    if (!existingAdmin) {
-      await User.create({
-        name: 'hassan',
-        username: 'admin',
-        password: '$2a$10$T1K1w.t.Qf786E4T1D.TGe8Zg6z/v2nF9.G6o5wNl2z2o1aN2k0.S', // hashed 'password'
-        role: 'admin'
-      });
-    }
-
-    const mappingUserNamesToId = {};
+    
+    // Create new users if they don't exist
     const usersCreated = [];
+    const results = [];
+    const mappingUserNamesToId = {};
 
-    // Pre-load all existing users so we never create duplicates
-    const existingUsers = await User.find({});
-    existingUsers.forEach(u => {
-      mappingUserNamesToId[u.name.toLowerCase().trim()] = u._id;
-    });
+    let users = await User.find({});
+    users.forEach(u => mappingUserNamesToId[u.name.toLowerCase().trim()] = u._id);
 
+    // Default file holder logic (create user if missing)
     const getFileHolderId = async (name) => {
       if (!name) return null;
       let cleanName = name.trim();
       let lowerName = cleanName.toLowerCase();
-
-      if (mappingUserNamesToId[lowerName]) return mappingUserNamesToId[lowerName];
-
-      let baseUsername = cleanName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'employee';
-      let username = baseUsername;
-      let counter = 1;
-      let existing = await User.findOne({ username });
-
-      while (existing) {
-        if (existing.name.toLowerCase().trim() === lowerName) {
-          mappingUserNamesToId[lowerName] = existing._id;
-          return existing._id;
-        }
-        username = `${baseUsername}${counter}`;
-        counter++;
-        existing = await User.findOne({ username });
+      
+      if (mappingUserNamesToId[lowerName]) {
+        return mappingUserNamesToId[lowerName];
       }
-
-      const password = 'Password@123';
-
+      
+      // if not found, create new employee
+      const username = cleanName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'user_' + Math.random().toString(36).substring(7);
+      
       const u = await User.create({
         name: cleanName,
         username: username,
-        password: '$2b$10$Jcw7t1sOqJs6SS2SNuBIdeAxgnpKIgGg/EEovG5PBqvDu9qy5c6R.', // pre-hashed Password@123
+        password: '$2a$10$T1K1w.t.Qf786E4T1D.TGe8Zg6z/v2nF9.G6o5wNl2z2o1aN2k0.S', // hashed 'password'
         role: 'employee'
       });
       mappingUserNamesToId[lowerName] = u._id;
-      usersCreated.push({ name: cleanName, username, password });
+      usersCreated.push(cleanName);
       return u._id;
     };
 
     const lines = dataStr.trim().split('\n');
-    let inserted = 0;
-    let skipped = 0;
-
+    let matched = 0;
+    
     for (const line of lines) {
       const parts = line.split('\t');
-
-      let odooId = parts[0]?.trim();
-      let clientName = parts[1]?.trim();
-
-      if (!clientName) {
-        skipped++;
-        continue;
-      }
-
+      if (parts.length < 2) continue;
+      
+      const odooId = parts[0].trim();
+      const clientName = parts[1].trim();
       const fileHolderStr = parts[2]?.trim() || '';
-
-      if (fileHolderStr) {
-        const isAllowed = ALLOWED_FILTERS.some(allowed => fileHolderStr.toLowerCase().includes(allowed));
-        if (!isAllowed) {
-          skipped++;
-          continue;
+      const followUpStr = parts[3]?.trim() || '';
+      
+      let fileHolderId = await getFileHolderId(fileHolderStr);
+      
+      const cases = await Case.find({ odooId });
+      
+      if (cases.length > 0) {
+        // Update all similar cases by odooId and name?  
+        // We will just update by odooId since multiple exist
+        for (const c of cases) {
+          if (fileHolderId) {
+            c.createdBy = fileHolderId;
+          }
+          if (fileHolderStr === '') {
+             // wait, if "there is no name (...) leave it blank"? We can't have an empty 'createdBy' because it's required (Schema).
+             // Let's create an "Unassigned" user if fileHolderStr is empty? Or keep existing? 
+             // "for the files that there is no name or follow up name leave it blank"
+             // if it's blank we should ideally use existing or a default user. I will skip overriding createdBy if it's blank.
+          }
+          
+          c.followUpName = followUpStr || '';
+          
+          await c.save();
+          matched++;
         }
       }
-
-      const followUpStr = parts[3]?.trim() || '';
-      const deadlineStr = parts[4]?.trim() || ''; // Ignored or map to notes
-      const appDateStr = parts[5]?.trim() || '';
-      const rawVisaTypeStr = parts[6]?.trim() || ''; // Contains Country + Visa Type
-      const emailStr = parts[7]?.trim() || '';
-      const passwordStr = parts[8]?.trim() || '';
-
-      const fileHolderId = await getFileHolderId(fileHolderStr);
-      let appointmentDate = parseDate(appDateStr);
-
-      // Determine Country (Default to Schengen based on standard EU countries)
-      let finalCountry = 'Schengen';
-      const lowercaseVisa = rawVisaTypeStr.toLowerCase();
-      if (lowercaseVisa.includes('usa') || lowercaseVisa.includes('america')) finalCountry = 'USA';
-      if (lowercaseVisa.includes('uk') || lowercaseVisa.includes('britain')) finalCountry = 'UK';
-      if (lowercaseVisa.includes('canada')) finalCountry = 'Canada';
-
-      const caseData = {
-        odooId: odooId || 'N/A',
-        clientName,
-        followUpName: followUpStr,
-        visaType: rawVisaTypeStr,
-        email: emailStr,
-        password: passwordStr,
-        department: 'Tourism',
-        country: finalCountry
-      };
-
-      if (deadlineStr && deadlineStr !== 'مش داخل') {
-        caseData.notes = 'Deadline: ' + deadlineStr;
-      }
-
-      if (appointmentDate) caseData.appointmentDate = appointmentDate;
-      if (fileHolderId) caseData.createdBy = fileHolderId;
-
-      await Case.create(caseData);
-      inserted++;
     }
 
     return NextResponse.json({
-      success: true,
-      message: "Database wiped (Cases only) and repopulated with allowed users filters.",
-      casesImported: inserted,
-      casesSkipped: skipped,
-      employeeCredentialsGenerated: usersCreated,
+       success: true,
+       updatedCasesCount: matched,
+       usersCreated,
     });
   } catch (error) {
-    console.error('Migration error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+     console.error('Migration error:', error);
+     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

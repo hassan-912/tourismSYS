@@ -19,8 +19,10 @@ const CaseSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
   },
+  department: { type: String, default: 'Tourism' },
+  reviewName: { type: String, default: '' },
+  reviewedItems: { type: [String], default: [] },
   progress: { type: Number, default: 0 },
 
   // Common fields (ALL countries)

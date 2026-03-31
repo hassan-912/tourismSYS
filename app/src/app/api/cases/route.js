@@ -17,10 +17,26 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const country = searchParams.get('country');
     const search = searchParams.get('search');
+    const department = searchParams.get('department') || 'Tourism';
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
-    let filter = {};
+    let filter = { department };
     if (country && country !== 'all') {
       filter.country = country;
+    }
+    
+    if (startDate || endDate) {
+      filter.appointmentDate = {};
+      if (startDate) {
+        filter.appointmentDate.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Include the entire end date by adding a day or setting time to 23:59:59.
+        const endDay = new Date(endDate);
+        endDay.setHours(23, 59, 59, 999);
+        filter.appointmentDate.$lte = endDay;
+      }
     }
     if (search) {
       filter.$or = [
@@ -52,10 +68,14 @@ export async function POST(request) {
     await dbConnect();
     const body = await request.json();
 
-    const newCase = new Case({
-      ...body,
-      createdBy: user.id,
-    });
+    const caseData = { ...body };
+    if (['admin', 'sub-admin'].includes(user.role) && body.createdBy) {
+      caseData.createdBy = body.createdBy;
+    } else {
+      caseData.createdBy = user.id;
+    }
+
+    const newCase = new Case(caseData);
 
     newCase.progress = calculateProgress(newCase);
     await newCase.save();

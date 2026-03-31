@@ -101,6 +101,9 @@ const DEFAULT_FORM = {
   application2: false,
   application3: false,
   translationCanada: false,
+  department: 'Tourism',
+  reviewName: '',
+  reviewedItems: [],
 };
 
 // Helper: convert ISO date string to dd/mm/yy for display in text input
@@ -108,28 +111,26 @@ function toDisplayDate(isoStr) {
   if (!isoStr) return '';
   const d = new Date(isoStr);
   if (isNaN(d.getTime())) return isoStr;
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yy = String(d.getFullYear()).slice(-2);
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const yy = String(d.getUTCFullYear()).slice(-2);
   return `${dd}/${mm}/${yy}`;
 }
 
-// Helper: convert dd/mm/yy text to ISO date string for storage
+// Helper: convert dd/mm/yy text to YYYY-MM-DD date string for storage
 function fromDisplayDate(text) {
   if (!text) return '';
   const match = text.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
   if (!match) return text;
-  const day = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10);
+  const day = match[1].padStart(2, '0');
+  const month = match[2].padStart(2, '0');
   let year = parseInt(match[3], 10);
   if (year < 100) year += 2000;
-  const d = new Date(year, month - 1, day);
-  if (isNaN(d.getTime())) return text;
-  return d.toISOString().split('T')[0];
+  return `${year}-${month}-${day}`;
 }
 
-export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
-  const [form, setForm] = useState(DEFAULT_FORM);
+export default function CaseForm({ caseData, onSubmit, onCancel, loading, users = [], currentUser = null, department = 'Tourism' }) {
+  const [form, setForm] = useState({ ...DEFAULT_FORM, createdBy: '', department: department || 'Tourism' });
   const [dateText, setDateText] = useState('');
 
   useEffect(() => {
@@ -137,17 +138,20 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
       const newForm = {
         ...DEFAULT_FORM,
         ...caseData,
+        department: department || 'Tourism',
         appointmentDate: caseData.appointmentDate
           ? new Date(caseData.appointmentDate).toISOString().split('T')[0]
           : '',
+        createdBy: caseData.createdBy?._id || caseData.createdBy || '',
+        reviewedItems: caseData.reviewedItems || [],
       };
       setForm(newForm);
       setDateText(toDisplayDate(newForm.appointmentDate));
     } else {
-      setForm(DEFAULT_FORM);
+      setForm({ ...DEFAULT_FORM, createdBy: '', department: department || 'Tourism' });
       setDateText('');
     }
-  }, [caseData]);
+  }, [caseData, department]);
 
   const handleChange = (key, value) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -169,6 +173,16 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
 
   const handleCheckbox = (key) => {
     setForm(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleReviewCheckbox = (key) => {
+    setForm(prev => {
+      const isChecked = prev.reviewedItems.includes(key);
+      const newItems = isChecked
+        ? prev.reviewedItems.filter(item => item !== key)
+        : [...prev.reviewedItems, key];
+      return { ...prev, reviewedItems: newItems };
+    });
   };
 
   const handleSubmit = (e) => {
@@ -383,6 +397,63 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading }) {
               placeholder="What's the next step?"
             />
           </div>
+        </div>
+
+        {['admin', 'sub-admin'].includes(currentUser?.role) && (
+          <div className="form-group" style={{ marginBottom: 20 }}>
+            <label className="form-label">Created By (File Holder) *</label>
+            <select
+              className="form-select"
+              value={form.createdBy}
+              onChange={e => handleChange('createdBy', e.target.value)}
+              required
+            >
+              <option value="">-- Select File Holder --</option>
+              {users.map(u => (
+                <option key={u._id} value={u._id}>{u.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Review Category */}
+        <div style={{ padding: '15px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', marginTop: '20px' }}>
+          <h3 style={{ marginBottom: '15px', fontSize: '1.1rem', color: 'var(--primary)' }}>Review Team Action</h3>
+          <div className="form-group" style={{ marginBottom: 15 }}>
+            <label className="form-label">Reviewer Name</label>
+            <input
+              type="text"
+              className="form-input"
+              value={form.reviewName}
+              onChange={e => handleChange('reviewName', e.target.value)}
+              placeholder="Who reviewed this?"
+            />
+          </div>
+          
+          {countryConfig.checkboxes.length > 0 && (
+            <div className="form-group">
+              <label className="form-label">Reviewed Requirements ({form.country})</label>
+              <div className="checkbox-group">
+                {countryConfig.checkboxes.map(field => {
+                  const isChecked = form.reviewedItems.includes(field.key);
+                  return (
+                    <div
+                      key={'review_' + field.key}
+                      className={`checkbox-item ${isChecked ? 'checked' : ''}`}
+                      onClick={() => handleReviewCheckbox(field.key)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleReviewCheckbox(field.key)}
+                      />
+                      <label>{field.label}</label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -49,7 +49,7 @@ export function requireAdmin(user) {
   const authError = requireAuth(user);
   if (authError) return authError;
 
-  if (user.role !== 'admin') {
+  if (user.role !== 'admin' && user.role !== 'sub-admin') {
     return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },

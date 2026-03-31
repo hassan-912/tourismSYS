@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function UsersPage() {
-  const { authFetch } = useAuth();
+  const { authFetch, user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: '', username: '', password: '', role: 'employee' });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [form, setForm] = useState({ role: '' });
+  const [createForm, setCreateForm] = useState({ name: '', username: '', password: '', role: 'employee' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,6 +46,34 @@ export default function UsersPage() {
     }
   };
 
+  const handleUpdateRole = async (e) => {
+    e.preventDefault();
+    if (form.role.toLowerCase().trim() === 'admin' && user?.role !== 'admin') {
+      setError('System Policy: Only main admin can assign "admin" role.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const res = await authFetch(`/api/users/${editUser._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ role: form.role }),
+      });
+      if (res.ok) {
+        setShowModal(false);
+        setEditUser(null);
+        loadUsers();
+      } else {
+        const data = await res.json();
+        setError(data.error);
+      }
+    } catch (error) {
+      setError('Network error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -50,11 +81,11 @@ export default function UsersPage() {
     try {
       const res = await authFetch('/api/users', {
         method: 'POST',
-        body: JSON.stringify(form),
+        body: JSON.stringify(createForm),
       });
       if (res.ok) {
-        setShowModal(false);
-        setForm({ name: '', username: '', password: '', role: 'employee' });
+        setShowCreateModal(false);
+        setCreateForm({ name: '', username: '', password: '', role: 'employee' });
         loadUsers();
       } else {
         const data = await res.json();
@@ -135,13 +166,18 @@ export default function UsersPage() {
         <div className="card">
           <div className="card-header">
             <h2>Team Members</h2>
-            <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Add User
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Use Edit Role to modify user permissions</span>
+              {user?.role === 'admin' && (
+                <button className="btn btn-primary btn-sm" onClick={() => setShowCreateModal(true)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add User
+                </button>
+              )}
+            </div>
           </div>
           <div className="table-wrapper">
             <table className="table">
@@ -171,14 +207,29 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDeleteUser(u._id)}
-                        disabled={u.role === 'admin'}
-                        style={u.role === 'admin' ? { opacity: 0.3 } : {}}
-                      >
-                        Delete
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setEditUser(u);
+                            setForm({ role: u.role || 'employee' });
+                            setShowModal(true);
+                            setError('');
+                          }}
+                        >
+                          Edit Role
+                        </button>
+                        {user?.role === 'admin' && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDeleteUser(u._id)}
+                            disabled={u.role === 'admin'}
+                            style={u.role === 'admin' ? { opacity: 0.3 } : {}}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -259,13 +310,61 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Create User Modal */}
-      {showModal && (
+      {/* Edit Role Modal */}
+      {showModal && editUser && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2>Edit Role for {editUser.name}</h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleUpdateRole}>
+              <div className="modal-body">
+                {error && <div className="alert alert-error">{error}</div>}
+                
+                <div className="form-group">
+                  <label className="form-label">Current Role</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editUser.role || 'employee'}
+                    disabled
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">New Custom Role *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={form.role}
+                    onChange={e => setForm({ role: e.target.value })}
+                    placeholder="e.g. employee, reviewer, manager"
+                    required
+                  />
+                  <small style={{ color: 'var(--text-muted)' }}>You can type any role here except "admin".</small>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Updating...' : 'Update Role'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
             <div className="modal-header">
               <h2>Add New User</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowCreateModal(false)}>×</button>
             </div>
             <form onSubmit={handleCreateUser}>
               <div className="modal-body">
@@ -275,8 +374,8 @@ export default function UsersPage() {
                   <input
                     type="text"
                     className="form-input"
-                    value={form.name}
-                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    value={createForm.name}
+                    onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
                     required
                   />
                 </div>
@@ -285,8 +384,8 @@ export default function UsersPage() {
                   <input
                     type="text"
                     className="form-input"
-                    value={form.username}
-                    onChange={e => setForm({ ...form, username: e.target.value })}
+                    value={createForm.username}
+                    onChange={e => setCreateForm({ ...createForm, username: e.target.value })}
                     required
                   />
                 </div>
@@ -295,25 +394,24 @@ export default function UsersPage() {
                   <input
                     type="password"
                     className="form-input"
-                    value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    value={createForm.password}
+                    onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
                     required
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Role</label>
-                  <select
-                    className="form-select"
-                    value={form.role}
-                    onChange={e => setForm({ ...form, role: e.target.value })}
-                  >
-                    <option value="employee">Employee</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={createForm.role}
+                    onChange={e => setCreateForm({ ...createForm, role: e.target.value })}
+                    placeholder="e.g. employee, sub-admin"
+                  />
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
