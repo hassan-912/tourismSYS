@@ -22,14 +22,21 @@ export default function MGPlusPage() {
   const [endDate, setEndDate] = useState('');
   const [activeTab, setActiveTab] = useState('New Cases');
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCasesCount, setTotalCasesCount] = useState(0);
 
   useEffect(() => {
     loadUsers();
   }, []);
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, userFilter, search, startDate, endDate, activeTab]);
+
+  useEffect(() => {
     loadCases();
-  }, [filter, userFilter, search, startDate, endDate]);
+  }, [filter, userFilter, search, startDate, endDate, currentPage, activeTab]);
 
   const loadUsers = async () => {
     try {
@@ -43,19 +50,24 @@ export default function MGPlusPage() {
   };
 
   const loadCases = async () => {
+    setLoading(true);
     try {
-      let url = '/api/cases?department=' + encodeURIComponent('MG+') + '&';
-      if (filter !== 'all') url += `country=${filter}&`;
+      let url = '/api/cases?department=' + encodeURIComponent('MG+') + `&page=${currentPage}&limit=10&mgTab=${encodeURIComponent(activeTab)}&`;
+      if (filter !== 'all') url += `country=${encodeURIComponent(filter)}&`;
       if (search) url += `search=${encodeURIComponent(search)}&`;
-      if (startDate) url += `startDate=${startDate}&`;
-      if (endDate) url += `endDate=${endDate}&`;
+      if (startDate) url += `startDate=${encodeURIComponent(startDate)}&`;
+      if (endDate) url += `endDate=${encodeURIComponent(endDate)}&`;
+      if (userFilter !== 'all') url += `userId=${encodeURIComponent(userFilter)}&`;
       const res = await authFetch(url);
       if (res.ok) {
         let data = await res.json();
-        if (userFilter !== 'all') {
-          data = data.filter(c => c.createdBy?._id === userFilter || c.createdBy === userFilter);
+        if (data.cases) {
+          setCases(data.cases);
+          setTotalPages(data.totalPages || 1);
+          setTotalCasesCount(data.totalCases || 0);
+        } else {
+          setCases(data);
         }
-        setCases(data);
       }
     } catch (error) {
       console.error('Failed to load cases:', error);
@@ -155,6 +167,30 @@ export default function MGPlusPage() {
     }
   };
 
+  const handleTogglePin = async (c) => {
+    try {
+      const isPinned = c.pinnedBy?.includes(user?.id);
+      setCases(prev => prev.map(caseItem => {
+        if (caseItem._id === c._id) {
+           const updatedPinnedBy = isPinned 
+             ? (caseItem.pinnedBy || []).filter(id => id !== user?.id)
+             : [...(caseItem.pinnedBy || []), user?.id];
+           return { ...caseItem, pinnedBy: updatedPinnedBy };
+        }
+        return caseItem;
+      }));
+
+      const res = await authFetch(`/api/cases/${c._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ togglePin: true }),
+      });
+      if (res.ok) loadCases();
+    } catch (e) {
+      console.error(e);
+      loadCases();
+    }
+  };
+
   const canEdit = (c) => {
     const normalizedRole = user?.role?.toLowerCase() || '';
     if (['admin', 'moderator', 'sub-admin', 'reviewer', 'review team', 'review'].includes(normalizedRole)) return true;
@@ -175,17 +211,15 @@ export default function MGPlusPage() {
     return <div className="loading-spinner"><div className="spinner" /></div>;
   }
 
-  const displayedCases = cases.filter(c => (c.mgTab || 'New Cases') === activeTab);
-
   return (
     <div>
       <div className="page-header" style={{ marginBottom: 0, paddingBottom: 10 }}>
         <div>
           <h1>📋 MG+</h1>
-          <div className="page-header-sub">{displayedCases.length} total record{displayedCases.length !== 1 ? 's' : ''}</div>
+          <div className="page-header-sub">{totalCasesCount > 0 ? totalCasesCount : cases.length} total records • Page {currentPage} of {totalPages}</div>
         </div>
         <div className="page-actions">
-          <button className="btn btn-secondary btn-sm" onClick={() => exportPdf(displayedCases)}>
+          <button className="btn btn-secondary btn-sm" onClick={() => exportPdf(cases)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                <polyline points="14 2 14 8 20 8" />
@@ -281,7 +315,7 @@ export default function MGPlusPage() {
       </div>
 
       {/* Cases Grid */}
-      {displayedCases.length === 0 ? (
+      {cases.length === 0 ? (
         <div className="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -292,10 +326,19 @@ export default function MGPlusPage() {
         </div>
       ) : (
         <div className="cases-grid">
-          {displayedCases.map(c => (
+          {cases.map(c => (
             <div key={c._id} className="case-card">
               <div className="case-card-header">
-                <h3>{c.clientName}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3>{c.clientName}</h3>
+                  <button 
+                    onClick={() => handleTogglePin(c)} 
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: 0 }}
+                    title={c.pinnedBy?.includes(user?.id) ? "Unpin Case" : "Pin Case"}
+                  >
+                    {c.pinnedBy?.includes(user?.id) ? '📌' : '📍'}
+                  </button>
+                </div>
                 <span className={`country-badge ${c.country.toLowerCase()}`}>
                   {c.country}
                 </span>
@@ -405,6 +448,29 @@ export default function MGPlusPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pagination" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '32px', marginBottom: '16px' }}>
+          <button 
+            className="btn btn-secondary" 
+            disabled={currentPage === 1 || loading}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          >
+            ← Previous
+          </button>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button 
+            className="btn btn-secondary" 
+            disabled={currentPage === totalPages || loading}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          >
+            Next →
+          </button>
         </div>
       )}
 

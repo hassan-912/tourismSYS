@@ -25,6 +25,10 @@ const CaseSchema = new mongoose.Schema({
   reviewedItems: { type: [String], default: [] },
   progress: { type: Number, default: 0 },
   mgTab: { type: String, enum: ['New Cases', 'After Rejection'], default: 'New Cases' },
+  pinnedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
 
   // Common fields (ALL countries)
   whatsappGroup: { type: Boolean, default: false },

@@ -38,11 +38,25 @@ export default function DashboardPage({ previewToken = null }) {
   if (!stats) return <div className="empty-state"><h3>Failed to load dashboard</h3></div>;
 
   return (
-    <div>
-      <div className="page-header">
+    <div className="dashboard-container" style={{ paddingBottom: '2rem' }}>
+      <div 
+        className="page-header" 
+        style={{ 
+          background: 'linear-gradient(135deg, var(--bg-secondary) 0%, transparent 100%)',
+          padding: '2rem', 
+          borderRadius: '16px', 
+          border: '1px solid var(--border)',
+          marginBottom: '2rem',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+        }}
+      >
         <div>
-          <h1>📊 Dashboard</h1>
-          <div className="page-header-sub">Overview of all cases and progress</div>
+          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', background: 'linear-gradient(45deg, var(--primary), #a18cd1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            📊 Welcome to the Dashboard
+          </h1>
+          <div className="page-header-sub" style={{ fontSize: '1rem', opacity: 0.8 }}>
+            Real-time overview of all cases, progress, and country breakdown.
+          </div>
         </div>
       </div>
 
@@ -94,13 +108,47 @@ export default function DashboardPage({ previewToken = null }) {
         </div>
       </div>
 
+      {/* Chart Section */}
+      <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 16, marginTop: 32 }}>
+        Case Distribution Chart
+      </h2>
+      <div className="chart-container" style={{ background: 'var(--bg-card)', padding: '32px 24px 16px', borderRadius: '16px', border: '1px solid var(--border)', display: 'flex', alignItems: 'flex-end', height: '300px', gap: '8%', marginBottom: 32, boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+        {Object.entries(stats.countryStats).map(([country, data]) => {
+          const heightPct = stats.totalCases > 0 ? (data.count / stats.totalCases) * 100 : 0;
+          return (
+            <div key={country} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', height: '100%', group: 'hover' }}>
+              <div style={{ marginBottom: 8, fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>
+                {data.count} <span style={{fontSize: '0.7rem', color: 'var(--text-muted)'}}>cases</span>
+              </div>
+              <div 
+                className="animated-bar"
+                style={{ 
+                  width: '100%', 
+                  maxWidth: '80px',
+                  background: 'linear-gradient(to top, var(--primary), #a18cd1)', 
+                  height: `${heightPct}%`, 
+                  minHeight: '4px',
+                  borderRadius: '12px 12px 0 0',
+                  transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 -4px 15px rgba(161, 140, 209, 0.3)'
+                }}
+              ></div>
+              <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: '1.2rem' }}>{COUNTRY_EMOJI[country]}</span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{country}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Country Stats */}
       <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 16 }}>
-        Country Breakdown
+        Performance Details
       </h2>
-      <div className="country-stats">
+      <div className="country-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
         {Object.entries(stats.countryStats).map(([country, data]) => (
-          <div key={country} className="country-stat-card">
+          <div key={country} className="country-stat-card" style={{ transition: 'transform 0.2s', ':hover': { transform: 'translateY(-4px)' } }}>
             <div className="country-stat-header">
               <h3>
                 <span style={{ marginRight: 8 }}>{COUNTRY_EMOJI[country]}</span>

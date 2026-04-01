@@ -25,6 +25,10 @@ const UserSchema = new mongoose.Schema({
       'Tourism', 'MG+', 'Review', 'moderator', 'jobseeker', 'study', 'immigration'
     ], // Keeping old ones for backward compatibility
   },
+  order: {
+    type: Number,
+    default: 0
+  },
 }, {
   timestamps: true,
 });

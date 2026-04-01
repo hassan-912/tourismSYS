@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
 import Case, { calculateProgress } from '@/lib/models/Case';
 import { getAuthUser, requireAuth } from '@/lib/auth';
@@ -20,6 +21,8 @@ export async function GET(request) {
     const department = searchParams.get('department') || 'Tourism';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const userId = searchParams.get('userId');
+    const mgTab = searchParams.get('mgTab');
 
     let filter = {};
     if (department === 'Reviewer' || department === 'Review') {
@@ -30,6 +33,12 @@ export async function GET(request) {
     if (country && country !== 'all') {
       filter.country = country;
     }
+    if (userId && userId !== 'all') {
+      filter.createdBy = userId;
+    }
+    if (mgTab && mgTab !== 'all') {
+      filter.mgTab = mgTab;
+    }
     
     if (startDate || endDate) {
       filter.appointmentDate = {};
@@ -37,7 +46,6 @@ export async function GET(request) {
         filter.appointmentDate.$gte = new Date(startDate);
       }
       if (endDate) {
-        // Include the entire end date by adding a day or setting time to 23:59:59.
         const endDay = new Date(endDate);
         endDay.setHours(23, 59, 59, 999);
         filter.appointmentDate.$lte = endDay;
@@ -52,11 +60,38 @@ export async function GET(request) {
       ];
     }
 
-    const cases = await Case.find(filter)
-      .populate('createdBy', 'name username')
-      .sort({ appointmentDate: 1, createdAt: -1 });
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 10;
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json(cases);
+    const pipeline = [
+      { $match: filter },
+      { 
+        $addFields: { 
+          // Check if current user._id is in the pinnedBy array
+          isPinned: { 
+            $in: [new mongoose.Types.ObjectId(user.id), { $ifNull: ["$pinnedBy", []] }] 
+          } 
+        } 
+      },
+      { $sort: { isPinned: -1, updatedAt: -1 } },
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    const [caseDocs, totalCases] = await Promise.all([
+      import('mongoose').then(mongoose => Case.aggregate(pipeline)),
+      Case.countDocuments(filter)
+    ]);
+
+    const cases = await Case.populate(caseDocs, { path: 'createdBy', select: 'name username' });
+
+    return NextResponse.json({
+      cases,
+      totalCases,
+      totalPages: Math.ceil(totalCases / limit),
+      currentPage: page
+    });
   } catch (error) {
     console.error('Get cases error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
@@ -70,7 +105,6 @@ export async function POST(request) {
     const authError = requireAuth(user);
     if (authError) return authError;
 
-    // RBAC check: Review team cannot create cases
     const normalizedRole = user.role.toLowerCase();
     const isReviewTeam = normalizedRole === 'review team' || normalizedRole === 'reviewer' || normalizedRole === 'review';
     if (isReviewTeam) {
@@ -80,12 +114,28 @@ export async function POST(request) {
     await dbConnect();
     const body = await request.json();
 
+    const targetDept = (body.department || 'tourism').toLowerCase();
+    const isAdmin = ['admin', 'moderator', 'sub-admin'].includes(normalizedRole);
+    const assignedDept = normalizedRole === 'employee' ? 'tourism' : normalizedRole;
+    
+    // Only employees within their specific category can create a case there
+    if (!isAdmin && assignedDept !== targetDept) {
+      return NextResponse.json({ 
+        error: `Action Denied: You are assigned to the '${user.role}' department. You cannot create cases in '${body.department || 'Tourism'}'.` 
+      }, { status: 403 });
+    }
+
     const caseData = { ...body };
     const canAssignCreator = ['admin', 'moderator', 'sub-admin'].includes(normalizedRole);
     if (canAssignCreator && body.createdBy) {
       caseData.createdBy = body.createdBy;
     } else {
       caseData.createdBy = user.id;
+    }
+
+    // Fix: Prevent Mongoose CastError by converting empty string Date to null
+    if (caseData.appointmentDate === '') {
+      caseData.appointmentDate = null;
     }
 
     const newCase = new Case(caseData);

@@ -14,9 +14,34 @@ export async function GET(request) {
     if (authError) return authError;
 
     await dbConnect();
-    const users = await User.find().select('-password').sort({ name: 1 });
+    const users = await User.find().select('-password').sort({ order: 1, name: 1 });
 
-    return NextResponse.json(users);
+    const stats = await import('@/lib/models/Case').then(m => m.default).then(Case => 
+      Case.aggregate([
+        {
+          $group: {
+            _id: { createdBy: "$createdBy", country: "$country" },
+            count: { $sum: 1 }
+          }
+        }
+      ])
+    );
+
+    const usersWithStats = users.map(u => {
+      const uObj = u.toObject();
+      uObj.caseStats = { Schengen: 0, USA: 0, UK: 0, Canada: 0 };
+      
+      stats.forEach(stat => {
+        if (stat._id.createdBy && stat._id.createdBy.toString() === u._id.toString()) {
+           if (['Schengen', 'USA', 'UK', 'Canada'].includes(stat._id.country)) {
+             uObj.caseStats[stat._id.country] = stat.count;
+           }
+        }
+      });
+      return uObj;
+    });
+
+    return NextResponse.json(usersWithStats);
   } catch (error) {
     console.error('Get users error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
@@ -72,6 +97,40 @@ export async function POST(request) {
     }, { status: 201 });
   } catch (error) {
     console.error('Create user error:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
+
+// PUT update users order
+export async function PUT(request) {
+  try {
+    const user = await getAuthUser(request);
+    const authError = requireAuth(user);
+    if (authError) return authError;
+
+    if (!['admin', 'moderator', 'sub-admin'].includes(user.role?.toLowerCase())) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { orderedIds } = await request.json();
+    if (!Array.isArray(orderedIds)) {
+      return NextResponse.json({ error: 'orderedIds array required' }, { status: 400 });
+    }
+
+    await dbConnect();
+    
+    const updates = orderedIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { order: index } }
+      }
+    }));
+    
+    await User.bulkWrite(updates);
+
+    return NextResponse.json({ success: true, message: 'Users reordered' });
+  } catch (error) {
+    console.error('Reorder users error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

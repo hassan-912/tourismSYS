@@ -21,20 +21,34 @@ export default function CasesPage({ department = 'Tourism' }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCasesCount, setTotalCasesCount] = useState(0);
 
   useEffect(() => {
     loadUsers();
   }, []);
 
   useEffect(() => {
-    loadCases();
+    setCurrentPage(1);
   }, [filter, userFilter, search, startDate, endDate]);
+
+  useEffect(() => {
+    loadCases();
+  }, [filter, userFilter, search, startDate, endDate, currentPage]);
 
   const loadUsers = async () => {
     try {
       const res = await authFetch('/api/users');
       if (res.ok) {
-        setUsers(await res.json());
+        const allUsers = await res.json();
+        const targetDept = department.toLowerCase();
+        const filteredUsers = allUsers.filter(u => {
+          const uRole = (u.role || '').toLowerCase();
+          const assignedDept = uRole === 'employee' ? 'tourism' : uRole;
+          return assignedDept === targetDept || ['admin', 'moderator', 'sub-admin'].includes(uRole);
+        });
+        setUsers(filteredUsers);
       }
     } catch (e) {
       console.error('Failed to load users:', e);
@@ -42,19 +56,27 @@ export default function CasesPage({ department = 'Tourism' }) {
   };
 
   const loadCases = async () => {
+    setLoading(true);
     try {
-      let url = `/api/cases?department=${encodeURIComponent(department)}&`;
-      if (filter !== 'all') url += `country=${filter}&`;
+      let url = `/api/cases?department=${encodeURIComponent(department)}&page=${currentPage}&limit=24&`;
+      if (filter !== 'all') url += `country=${encodeURIComponent(filter)}&`;
       if (search) url += `search=${encodeURIComponent(search)}&`;
-      if (startDate) url += `startDate=${startDate}&`;
-      if (endDate) url += `endDate=${endDate}&`;
+      if (startDate) url += `startDate=${encodeURIComponent(startDate)}&`;
+      if (endDate) url += `endDate=${encodeURIComponent(endDate)}&`;
+      if (userFilter !== 'all') url += `userId=${encodeURIComponent(userFilter)}&`;
+      
       const res = await authFetch(url);
       if (res.ok) {
         let data = await res.json();
-        if (userFilter !== 'all') {
-          data = data.filter(c => c.createdBy?._id === userFilter || c.createdBy === userFilter);
+        // Since backend now returns pagination metadata
+        if (data.cases) {
+          setCases(data.cases);
+          setTotalPages(data.totalPages || 1);
+          setTotalCasesCount(data.totalCases || 0);
+        } else {
+          // Fallback if backend hasn't updated yet somehow
+          setCases(data);
         }
-        setCases(data);
       }
     } catch (error) {
       console.error('Failed to load cases:', error);
@@ -154,6 +176,33 @@ export default function CasesPage({ department = 'Tourism' }) {
     }
   };
 
+  const handleTogglePin = async (c) => {
+    try {
+      // Optimistic UI update
+      const isPinned = c.pinnedBy?.includes(user?.id);
+      setCases(prev => prev.map(caseItem => {
+        if (caseItem._id === c._id) {
+           const updatedPinnedBy = isPinned 
+             ? (caseItem.pinnedBy || []).filter(id => id !== user?.id)
+             : [...(caseItem.pinnedBy || []), user?.id];
+           return { ...caseItem, pinnedBy: updatedPinnedBy };
+        }
+        return caseItem;
+      }));
+
+      const res = await authFetch(`/api/cases/${c._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ togglePin: true }),
+      });
+      if (res.ok) {
+        loadCases(); // Re-fetch to guarantee correct sorting
+      }
+    } catch (e) {
+      console.error(e);
+      loadCases(); // Rollback on error
+    }
+  };
+
   const canEdit = (c) => {
     const normalizedRole = user?.role?.toLowerCase() || '';
     if (['admin', 'moderator', 'sub-admin', 'reviewer', 'review team', 'review'].includes(normalizedRole)) return true;
@@ -179,7 +228,7 @@ export default function CasesPage({ department = 'Tourism' }) {
       <div className="page-header">
         <div>
           <h1>📋 {department}</h1>
-          <div className="page-header-sub">{cases.length} total record{cases.length !== 1 ? 's' : ''}</div>
+          <div className="page-header-sub">{totalCasesCount > 0 ? totalCasesCount : cases.length} total records • Page {currentPage} of {totalPages}</div>
         </div>
         <div className="page-actions">
           <button className="btn btn-secondary btn-sm" onClick={() => exportPdf(cases)}>
@@ -275,7 +324,16 @@ export default function CasesPage({ department = 'Tourism' }) {
           {cases.map(c => (
             <div key={c._id} className="case-card">
               <div className="case-card-header">
-                <h3>{c.clientName}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3>{c.clientName}</h3>
+                  <button 
+                    onClick={() => handleTogglePin(c)} 
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: 0 }}
+                    title={c.pinnedBy?.includes(user?.id) ? "Unpin Case" : "Pin Case"}
+                  >
+                    {c.pinnedBy?.includes(user?.id) ? '📌' : '📍'}
+                  </button>
+                </div>
                 <span className={`country-badge ${c.country.toLowerCase()}`}>
                   {c.country}
                 </span>
@@ -385,6 +443,29 @@ export default function CasesPage({ department = 'Tourism' }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pagination" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '32px', marginBottom: '16px' }}>
+          <button 
+            className="btn btn-secondary" 
+            disabled={currentPage === 1 || loading}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          >
+            ← Previous
+          </button>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button 
+            className="btn btn-secondary" 
+            disabled={currentPage === totalPages || loading}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          >
+            Next →
+          </button>
         </div>
       )}
 

@@ -113,6 +113,28 @@ export default function UsersPage() {
     }
   };
 
+  const handleMoveUser = async (index, direction) => {
+    if (direction === -1 && index === 0) return;
+    if (direction === 1 && index === users.length - 1) return;
+
+    const newUsers = [...users];
+    const temp = newUsers[index];
+    newUsers[index] = newUsers[index + direction];
+    newUsers[index + direction] = temp;
+    setUsers(newUsers);
+
+    try {
+      const orderedIds = newUsers.map(u => u._id);
+      await authFetch('/api/users', {
+        method: 'PUT',
+        body: JSON.stringify({ orderedIds })
+      });
+    } catch (e) {
+      console.error(e);
+      loadUsers(); // rollback
+    }
+  };
+
   const handleCreatePreviewLink = async () => {
     try {
       const res = await authFetch('/api/preview', {
@@ -190,11 +212,12 @@ export default function UsersPage() {
                   <th>Name</th>
                   <th>Username</th>
                   <th>Role</th>
+                  <th>Cases (Sch / USA / UK / Can)</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map(u => (
+                {users.map((u, index) => (
                   <tr key={u._id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -211,29 +234,59 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>
+                      {u.caseStats ? (
+                        <div style={{ fontSize: '0.85rem', display: 'flex', gap: '8px' }}>
+                          <span title="Schengen">🇪🇺 {u.caseStats.Schengen || 0}</span>
+                          <span title="USA">🇺🇸 {u.caseStats.USA || 0}</span>
+                          <span title="UK">🇬🇧 {u.caseStats.UK || 0}</span>
+                          <span title="Canada">🇨🇦 {u.caseStats.Canada || 0}</span>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading...</span>
+                      )}
+                    </td>
+                    <td>
                       <div style={{ display: 'flex', gap: '4px' }}>
                         {canManageRoles && (
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => {
-                              setEditUser(u);
-                              setForm({ role: u.role || 'employee' });
-                              setShowModal(true);
-                              setError('');
-                            }}
-                          >
-                            Edit Role
-                          </button>
-                        )}
-                        {canManageRoles && (
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDeleteUser(u._id)}
-                            disabled={u.role === 'admin' || u.role === 'Admin'}
-                            style={(u.role === 'admin' || u.role === 'Admin') ? { opacity: 0.3 } : {}}
-                          >
-                            Delete
-                          </button>
+                          <>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleMoveUser(index, -1)}
+                              disabled={index === 0}
+                              title="Move Up"
+                              style={{ padding: '4px 6px' }}
+                            >
+                              ↑
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleMoveUser(index, 1)}
+                              disabled={index === users.length - 1}
+                              title="Move Down"
+                              style={{ padding: '4px 6px' }}
+                            >
+                              ↓
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setEditUser(u);
+                                setForm({ role: u.role || 'employee' });
+                                setShowModal(true);
+                                setError('');
+                              }}
+                            >
+                              Edit Role
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDeleteUser(u._id)}
+                              disabled={u.role === 'admin' || u.role === 'Admin'}
+                              style={(u.role === 'admin' || u.role === 'Admin') ? { opacity: 0.3 } : {}}
+                            >
+                              Delete
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
