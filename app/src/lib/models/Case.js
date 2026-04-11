@@ -53,6 +53,15 @@ const CaseSchema = new mongoose.Schema({
   application2: { type: Boolean, default: false },
   application3: { type: Boolean, default: false },
   translationCanada: { type: Boolean, default: false },
+
+  // Custom Requirements added via UI
+  customRequirements: {
+    type: [{
+      name: { type: String, required: true },
+      completed: { type: Boolean, default: false }
+    }],
+    default: []
+  }
 }, {
   timestamps: true,
 });
@@ -99,7 +108,8 @@ export function calculateProgress(caseData) {
       countrySpecific = [];
   }
 
-  const allItems = [...common, ...countrySpecific];
+  const customItems = (caseData.customRequirements || []).map(req => req.completed);
+  const allItems = [...common, ...countrySpecific, ...customItems];
   const total = allItems.length;
   const completed = allItems.filter(Boolean).length;
 

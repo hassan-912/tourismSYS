@@ -105,6 +105,7 @@ const DEFAULT_FORM = {
   reviewName: '',
   reviewedItems: [],
   mgTab: 'New Cases',
+  customRequirements: [],
 };
 
 // Helper: convert ISO date string to dd/mm/yy for display in text input
@@ -133,6 +134,8 @@ function fromDisplayDate(text) {
 export default function CaseForm({ caseData, onSubmit, onCancel, loading, users = [], currentUser = null, department = 'Tourism' }) {
   const [form, setForm] = useState({ ...DEFAULT_FORM, createdBy: '', department: department || 'Tourism' });
   const [dateText, setDateText] = useState('');
+  const [newReqName, setNewReqName] = useState('');
+  const [showAddReq, setShowAddReq] = useState(false);
 
   useEffect(() => {
     if (caseData) {
@@ -146,6 +149,7 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading, users 
         createdBy: caseData.createdBy?._id || caseData.createdBy || '',
         reviewedItems: caseData.reviewedItems || [],
         mgTab: caseData.mgTab || 'New Cases',
+        customRequirements: caseData.customRequirements || [],
       };
       setForm(newForm);
       setDateText(toDisplayDate(newForm.appointmentDate));
@@ -175,6 +179,36 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading, users 
 
   const handleCheckbox = (key) => {
     setForm(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleCustomCheckbox = (idx) => {
+    setForm(prev => {
+      const newReqs = [...(prev.customRequirements || [])];
+      newReqs[idx] = { ...newReqs[idx], completed: !newReqs[idx].completed };
+      return { ...prev, customRequirements: newReqs };
+    });
+  };
+
+  const handleAddCustomReq = () => {
+    if (newReqName.trim()) {
+      setForm(prev => ({
+        ...prev,
+        customRequirements: [
+          ...(prev.customRequirements || []),
+          { name: newReqName.trim(), completed: false }
+        ]
+      }));
+      setNewReqName('');
+      setShowAddReq(false);
+    }
+  };
+
+  const handleRemoveCustomReq = (idx) => {
+    setForm(prev => {
+      const newReqs = [...(prev.customRequirements || [])];
+      newReqs.splice(idx, 1);
+      return { ...prev, customRequirements: newReqs };
+    });
   };
 
   const handleReviewCheckbox = (key) => {
@@ -359,6 +393,70 @@ export default function CaseForm({ caseData, onSubmit, onCancel, loading, users 
             </div>
           </div>
         )}
+
+        {/* Custom Requirements */}
+        <div className="form-group" style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <label className="form-label" style={{ marginBottom: 0 }}>Custom Requirements</label>
+            {['admin', 'moderator', 'sub-admin'].includes(currentUser?.role?.toLowerCase()) && (
+              <button 
+                type="button" 
+                className="btn btn-secondary btn-sm"
+                onClick={() => setShowAddReq(!showAddReq)}
+                style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+              >
+                + Add Requirement
+              </button>
+            )}
+          </div>
+          
+          {showAddReq && (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Requirement Name" 
+                value={newReqName}
+                onChange={e => setNewReqName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCustomReq())}
+              />
+              <button type="button" className="btn btn-primary btn-sm" onClick={handleAddCustomReq}>Add</button>
+            </div>
+          )}
+
+          {form.customRequirements && form.customRequirements.length > 0 ? (
+            <div className="checkbox-group">
+              {form.customRequirements.map((req, idx) => (
+                <div key={'custom_' + idx} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div
+                    className={`checkbox-item ${req.completed ? 'checked' : ''}`}
+                    onClick={() => handleCustomCheckbox(idx)}
+                    style={{ flex: 1 }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={req.completed}
+                      onChange={() => handleCustomCheckbox(idx)}
+                    />
+                    <label>{req.name}</label>
+                  </div>
+                  {['admin', 'moderator', 'sub-admin'].includes(currentUser?.role?.toLowerCase()) && (
+                    <button 
+                      type="button"
+                      onClick={() => handleRemoveCustomReq(idx)}
+                      style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }}
+                      title="Remove Requirement"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No custom requirements added.</div>
+          )}
+        </div>
 
         {/* Toggle */}
         {countryConfig.toggle && (

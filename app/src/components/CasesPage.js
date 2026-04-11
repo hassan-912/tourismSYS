@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import CaseForm from '@/components/CaseForm';
 import ProgressBar from '@/components/ProgressBar';
@@ -18,12 +18,30 @@ export default function CasesPage({ department = 'Tourism' }) {
   const [filter, setFilter] = useState('all'); // country filter
   const [userFilter, setUserFilter] = useState('all'); // user filter
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // local input for debounce
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCasesCount, setTotalCasesCount] = useState(0);
+  const debounceRef = useRef(null);
+
+  // Debounced search: waits 400ms after user stops typing
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(searchInput);
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchInput]);
+
+  const handleSearchKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setSearch(searchInput);
+    }
+  }, [searchInput]);
 
   useEffect(() => {
     loadUsers();
@@ -283,8 +301,9 @@ export default function CasesPage({ department = 'Tourism' }) {
           <input
             type="text"
             placeholder="Search by name, phone, or Odoo ID..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
           />
         </div>
         

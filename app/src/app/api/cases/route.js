@@ -34,7 +34,12 @@ export async function GET(request) {
       filter.country = country;
     }
     if (userId && userId !== 'all') {
-      filter.createdBy = userId;
+      try {
+        filter.createdBy = new mongoose.Types.ObjectId(userId);
+      } catch (e) {
+        // If invalid ObjectId format, still try as string
+        filter.createdBy = userId;
+      }
     }
     if (mgTab && mgTab !== 'all') {
       filter.mgTab = mgTab;
@@ -52,11 +57,13 @@ export async function GET(request) {
       }
     }
     if (search) {
+      // Escape special regex characters to prevent crashes
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
-        { clientName: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
-        { odooId: { $regex: search, $options: 'i' } },
-        { visaType: { $regex: search, $options: 'i' } },
+        { clientName: { $regex: escapedSearch, $options: 'i' } },
+        { phone: { $regex: escapedSearch, $options: 'i' } },
+        { odooId: { $regex: escapedSearch, $options: 'i' } },
+        { visaType: { $regex: escapedSearch, $options: 'i' } },
       ];
     }
 
